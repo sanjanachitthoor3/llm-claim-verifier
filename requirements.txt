@@ -1,0 +1,10 @@
+fastapi
+uvicorn
+sentence-transformers
+transformers
+torch
+faiss-cpu
+wikipedia
+numpy
+scikit-learn
+python-dotenv
