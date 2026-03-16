@@ -8,3 +8,6 @@ wikipedia
 numpy
 scikit-learn
 python-dotenv
+spacy
+pytest
+groq
