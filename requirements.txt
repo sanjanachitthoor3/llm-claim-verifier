@@ -11,3 +11,4 @@ python-dotenv
 spacy
 pytest
 groq
+nltk
