@@ -1,5 +1,5 @@
 from app.utils.text_preprocessing import split_into_sentences
-
+# This test checks the sentence splitting functionality of the text preprocessing module.
 
 def test_text_processing():
 

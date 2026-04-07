@@ -24,6 +24,12 @@ class WikiFetcher:
         entity = self._extract_entity(claim)
         if not entity:
             return None
+        
+        # --- SIMPLE QUERY IMPROVEMENT ---
+        claim_lower = claim.lower()
+
+        if any(word in claim_lower for word in ["founded", "company", "headquarters", "ceo"]):
+            entity = f"{entity} company"
 
         results = wikipedia.search(entity, results=5)
         if not results:

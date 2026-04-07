@@ -26,6 +26,9 @@ Rules:
 - Split sentences containing multiple facts.
 - Ignore opinions.
 - Return ONLY JSON.
+- Replace pronouns (he, she, they, it) with the correct entity name.
+- Each claim must be fully self-contained. 
+- If a sentence contains multiple subjects, split into separate claims.
 
 Format:
 {{
