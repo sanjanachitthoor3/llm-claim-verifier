@@ -25,7 +25,7 @@ def test_manual_pipeline1():
             print("No Wikipedia article found.")
 
 
-def test_ambiguous_entity(): #gave nicola tesla article instead of tesla company
+def test_ambiguous_entity(): #gave nicola tesla article instead of tesla company -FIXED
     llm_response = "Tesla was founded in 2003."
 
     extractor= ClaimExtractor()
