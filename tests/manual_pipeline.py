@@ -3,6 +3,7 @@ from app.modules.wikipedia.wiki_fetcher import WikiFetcher
 from app.utils.text_preprocessing import split_into_sentences
 from app.modules.embeddings.embedder import get_top_k_sentences
 from app.modules.verification.nli_verifier import NLIVerifier
+from app.modules.scoring.scorer import compute_score
 #---------------------------------------------------------------------
 
 
@@ -12,7 +13,9 @@ from app.modules.verification.nli_verifier import NLIVerifier
 #       claim → wiki → sentences → embeddings → top-k → print
 # module 4 [faiss not implemented in v1]
 # module 5:
-#       claim → wiki → sentences → top-k → nli → print verdict
+#       claim → wiki → sentences → top-k → nli → print final verdict per claim 
+# module 6:
+#       claim → wiki → sentences → top-k → nli → store aggregated verdicts per claim → compute_score(all_verdicts for overall llm hallucination risk) → print final score
 
 
 
@@ -20,10 +23,12 @@ from app.modules.verification.nli_verifier import NLIVerifier
 def test_manual_pipeline1():
     #llm response string
     llm_response = "Albert Einstein was a physicist. He developed the theory of relativity."
-    
+    # llm_response = "Albert Einstein was born in 1879. He was born in 2000."
+
     extractor= ClaimExtractor()
     claims = extractor.extract_claims(llm_response)
     print(f"\nExtracted Claims for text:\n{llm_response}")
+    all_verdicts= []
     for c in claims:
         print("-", c)
         fetcher= WikiFetcher()
@@ -56,20 +61,27 @@ def test_manual_pipeline1():
                     continue
 
                 filtered_sentences.append(s)
-
-    
             top_k= get_top_k_sentences(c, filtered_sentences, k=3)
-            #Module 5: print final verdict via nli model
+
+
+
+            #Module 5: print final verdict per claim via nli model
             verifier = NLIVerifier()
             verdict = verifier.verify(c, top_k)
             print(f"\nClaim:\n{c}")
             print(f"\nTop-k Relevant Sentences for claim:\n{c}")
             for s in top_k:
                 print("-", s)
-            print(f"Verification Verdict: {verdict}")
+            print(f"Verification Verdict: {verdict}") #supported/contradicted/not enough info
+            all_verdicts.append(verdict)
 
         else:
             print("No Wikipedia article found.")
+    
+    #module 6: compute overall hallucination risk score for the llm response based on all claim verdicts
+    score_result = compute_score(all_verdicts)
+    print(f"\nOverall Score for LLM response:\n{score_result}")
+
 
 
 
@@ -200,8 +212,8 @@ def test_additional_cases():
 
 
 if __name__ == "__main__":
-    # test_manual_pipeline1()
-    test_additional_cases()
+    test_manual_pipeline1()
+    # test_additional_cases()
     # test_ambiguous_entity()
     # test_multi_entity()
     # test_weak_claim()
