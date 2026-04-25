@@ -11,6 +11,8 @@ Pipeline position:
     faiss_retriever.py  →  nli_verifier.py  →  scoring module
 """
 
+from cProfile import label
+
 import torch
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 from typing import List
@@ -113,6 +115,7 @@ class NLIVerifier:
     # ------------------------------------------------------------------
 
     def _classify(self, premise: str, hypothesis: str) -> str:
+
         """
         Run the NLI model for a single (premise, hypothesis) pair.
 
@@ -144,7 +147,10 @@ class NLIVerifier:
             logits = self._model(**inputs).logits  # shape: (1, 3)
 
         predicted_index = logits.argmax(dim=-1).item()
-        return self._LABELS[predicted_index]
+        label = self._LABELS[predicted_index]
+
+
+        return label
 
     @staticmethod
     def _aggregate(labels: List[str]) -> str:
