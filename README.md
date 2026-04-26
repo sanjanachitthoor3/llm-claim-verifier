@@ -109,14 +109,14 @@ frontend/index.html
 
 ### Mixed Claims (Realistic LLM Output)
 
-![Mixed](demo-images\image-3.png)
-![Mixed](demo-images\image-4.png)
-![Mixed](demo-images\image-5.png)
+![Mixed](demo-images/image-3.png)
+![Mixed](demo-images/image-4.png)
+![Mixed](demo-images/image-5.png)
 
 ### Fully Supported Case
 
-![Supported](demo-images\image-6.png)
-![Supported](demo-images\image-7.png)
+![Supported](demo-images/image-6.png)
+![Supported](demo-images/image-7.png)
 
 ---
 
