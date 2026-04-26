@@ -1,0 +1,471 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LLM Claim Verification System</title>
+ <style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: linear-gradient(160deg, #c9cdd4 0%, #d4d8df 40%, #c5cad2 100%);
+    color: #111827;
+    min-height: 100vh;
+    padding: 3rem 2rem 5rem;
+  }
+
+  /* -------- MAIN PLACARD -------- */
+
+  .container {
+    max-width: 800px;
+    margin: 0 auto;
+    background: #f4f5f7;
+    padding: 2.25rem 2.25rem 2.75rem;
+    border-radius: 20px;
+    border: 1px solid rgba(255,255,255,0.6);
+    box-shadow:
+      0 0 0 1px rgba(0,0,0,0.06),
+      0 8px 20px rgba(0,0,0,0.08),
+      0 24px 48px rgba(0,0,0,0.10);
+  }
+
+  /* -------- HEADER -------- */
+
+  header {
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid rgba(0,0,0,0.08);
+  }
+
+  header h1 {
+    font-size: 1.875rem;
+    font-weight: 700;
+    letter-spacing: -0.025em;
+    color: #0d1117;
+    margin-bottom: 0.35rem;
+  }
+
+  header p {
+    font-size: 0.9375rem;
+    color: #6b7280;
+    font-weight: 400;
+  }
+
+  /* -------- CARDS -------- */
+
+  .input-card,
+  .score-card,
+  .claim-card {
+    background: #ffffff;
+    border: 1px solid rgba(0,0,0,0.07);
+    border-radius: 14px;
+    padding: 1.375rem 1.5rem;
+    margin-bottom: 1.25rem;
+    box-shadow:
+      0 1px 2px rgba(0,0,0,0.04),
+      0 4px 12px rgba(0,0,0,0.05);
+    transition: box-shadow 0.2s ease, transform 0.2s ease;
+  }
+
+  .claim-card:hover {
+    transform: translateY(-1px);
+    box-shadow:
+      0 2px 6px rgba(0,0,0,0.06),
+      0 8px 20px rgba(0,0,0,0.07);
+  }
+
+  /* -------- INPUT -------- */
+
+  label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: #9ca3af;
+    margin-bottom: 0.55rem;
+    display: block;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  textarea {
+    width: 100%;
+    min-height: 140px;
+    border: 1.5px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 0.875rem 1rem;
+    font-size: 0.9375rem;
+    font-family: inherit;
+    color: #111827;
+    background: #fafafa;
+    resize: vertical;
+    outline: none;
+    line-height: 1.6;
+    transition: border-color 0.18s, box-shadow 0.18s, background 0.18s;
+  }
+
+  textarea:focus {
+    border-color: #6366f1;
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(99,102,241,0.12);
+  }
+
+  /* -------- BUTTON -------- */
+
+  .btn-row {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 1rem;
+  }
+
+  button {
+    background: linear-gradient(135deg, #5b5ef4 0%, #4338ca 100%);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    padding: 0.65rem 1.5rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    letter-spacing: 0.01em;
+    box-shadow:
+      0 1px 2px rgba(67,56,202,0.25),
+      0 4px 12px rgba(67,56,202,0.22);
+    transition: transform 0.15s, box-shadow 0.15s, background 0.15s, opacity 0.15s;
+  }
+
+  button:hover {
+    background: linear-gradient(135deg, #4f46e5 0%, #3730a3 100%);
+    transform: translateY(-1px);
+    box-shadow:
+      0 2px 4px rgba(67,56,202,0.3),
+      0 6px 16px rgba(67,56,202,0.28);
+  }
+
+  button:active {
+    transform: translateY(0) scale(0.98);
+    box-shadow: 0 1px 3px rgba(67,56,202,0.2);
+  }
+
+  button:disabled { opacity: 0.45; cursor: not-allowed; transform: none; box-shadow: none; }
+
+  /* -------- SPINNER -------- */
+
+  .spinner {
+    width: 14px;
+    height: 14px;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    display: none;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* -------- ERROR -------- */
+
+  .error-box {
+    background: #fff5f5;
+    border: 1px solid #fecaca;
+    border-radius: 12px;
+    padding: 0.875rem 1.125rem;
+    color: #b91c1c;
+    font-size: 0.875rem;
+    font-weight: 500;
+    margin-bottom: 1.25rem;
+    display: none;
+  }
+
+  /* -------- SCORE SECTION -------- */
+
+  .score-card h2,
+  .claims-section h2 {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #9ca3af;
+    margin-bottom: 1rem;
+  }
+
+  .score-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: 10px;
+  }
+
+  .metric {
+    background: #f7f8fa;
+    border: 1px solid rgba(0,0,0,0.06);
+    border-radius: 11px;
+    padding: 0.875rem 1rem;
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+
+  .metric:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 3px 10px rgba(0,0,0,0.07);
+  }
+
+  .metric-label {
+    font-size: 0.695rem;
+    font-weight: 600;
+    color: #9ca3af;
+    margin-bottom: 0.35rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  .metric-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #111827;
+    letter-spacing: -0.025em;
+  }
+
+  .metric-value.trust { color: #059669; }
+  .metric-value.risk  { color: #dc2626; }
+
+  /* -------- CLAIMS -------- */
+
+  .claim-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 0.875rem;
+  }
+
+  .claim-text {
+    font-size: 0.9375rem;
+    font-weight: 500;
+    color: #111827;
+    line-height: 1.6;
+  }
+
+  .verdict-badge {
+    flex-shrink: 0;
+    font-size: 0.67rem;
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    padding: 0.28rem 0.75rem;
+    border-radius: 20px;
+    white-space: nowrap;
+  }
+
+  .badge-supported    { background: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; }
+  .badge-contradicted { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+  .badge-not-enough   { background: #f3f4f6; color: #4b5563; border: 1px solid #e5e7eb; }
+
+  /* -------- EVIDENCE -------- */
+
+  .evidence-label {
+    font-size: 0.695rem;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: #9ca3af;
+    font-weight: 600;
+    margin-bottom: 0.55rem;
+  }
+
+  .evidence-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+  }
+
+  .evidence-item {
+    font-size: 0.8375rem;
+    color: #4b5563;
+    line-height: 1.65;
+    padding: 0.6rem 0.875rem;
+    background: #f7f8fa;
+    border-radius: 8px;
+    border-left: 3px solid #d1d5db;
+  }
+
+  .badge-supported    ~ .evidence-list .evidence-item { border-left-color: #6ee7b7; }
+  .badge-contradicted ~ .evidence-list .evidence-item { border-left-color: #fca5a5; }
+
+  .no-evidence {
+    font-size: 0.825rem;
+    color: #9ca3af;
+    font-style: italic;
+  }
+</style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>LLM Claim Verification</h1>
+      <p>Paste an LLM-generated response to check it for factual accuracy.</p>
+    </header>
+
+    <div class="input-card">
+      <label for="llm-input">LLM response</label>
+      <textarea id="llm-input" placeholder="Paste the LLM response here..."></textarea>
+      <div class="btn-row">
+        <button id="submit-btn" onclick="runVerification()">
+          <span class="spinner" id="spinner"></span>
+          <span id="btn-label">Verify claims</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="error-box" id="error-box"></div>
+
+    <div class="score-card" id="score-card">
+      <h2>Overall score</h2>
+      <div class="score-grid" id="score-grid"></div>
+    </div>
+
+    <div class="claims-section" id="claims-section" style="display:none;">
+      <h2>Claims</h2>
+      <div id="claims-container"></div>
+    </div>
+  </div>
+
+  <script>
+    const API_URL = "http://127.0.0.1:8000/verify";
+
+    function setLoading(on) {
+      const btn     = document.getElementById("submit-btn");
+      const spinner = document.getElementById("spinner");
+      const label   = document.getElementById("btn-label");
+      btn.disabled        = on;
+      spinner.style.display = on ? "block" : "none";
+      label.textContent   = on ? "Verifying…" : "Verify claims";
+    }
+
+    function showError(msg) {
+      const box = document.getElementById("error-box");
+      box.textContent  = msg;
+      box.style.display = msg ? "block" : "none";
+    }
+
+    function verdictBadgeClass(verdict) {
+      if (verdict === "SUPPORTED")      return "badge-supported";
+      if (verdict === "CONTRADICTED")   return "badge-contradicted";
+      return "badge-not-enough";
+    }
+
+    function verdictLabel(verdict) {
+      if (verdict === "SUPPORTED")      return "Supported";
+      if (verdict === "CONTRADICTED")   return "Contradicted";
+      return "Not enough info";
+    }
+
+    function renderScore(score) {
+      const card = document.getElementById("score-card");
+      const grid = document.getElementById("score-grid");
+
+      const trust = (score.trust_score * 100).toFixed(1);
+      const risk  = (score.hallucination_risk * 100).toFixed(1);
+
+      grid.innerHTML = `
+        <div class="metric">
+          <div class="metric-label">Trust score</div>
+          <div class="metric-value trust">${trust}%</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Hallucination risk</div>
+          <div class="metric-value risk">${risk}%</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Supported</div>
+          <div class="metric-value">${score.supported}</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Contradicted</div>
+          <div class="metric-value">${score.contradicted}</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Not enough info</div>
+          <div class="metric-value">${score.not_enough_info}</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Total claims</div>
+          <div class="metric-value">${score.total}</div>
+        </div>
+      `;
+      card.style.display = "block";
+    }
+
+    function renderClaims(claims) {
+      const section   = document.getElementById("claims-section");
+      const container = document.getElementById("claims-container");
+      container.innerHTML = "";
+
+      claims.forEach(({ claim, verdict, evidence }) => {
+        const badgeClass = verdictBadgeClass(verdict);
+
+        const evidenceHTML = evidence && evidence.length
+          ? evidence.map(s => `<div class="evidence-item">${escHtml(s)}</div>`).join("")
+          : `<div class="no-evidence">No evidence retrieved.</div>`;
+
+        const card = document.createElement("div");
+        card.className = "claim-card";
+        card.innerHTML = `
+          <div class="claim-header">
+            <div class="claim-text">${escHtml(claim)}</div>
+            <span class="verdict-badge ${badgeClass}">${verdictLabel(verdict)}</span>
+          </div>
+          <div class="evidence-label">Evidence</div>
+          <div class="evidence-list">${evidenceHTML}</div>
+        `;
+        container.appendChild(card);
+      });
+
+      section.style.display = "block";
+    }
+
+    function escHtml(str) {
+      return str
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    async function runVerification() {
+      const text = document.getElementById("llm-input").value.trim();
+      if (!text) { showError("Please paste an LLM response before verifying."); return; }
+
+      showError("");
+      document.getElementById("score-card").style.display    = "none";
+      document.getElementById("claims-section").style.display = "none";
+      setLoading(true);
+
+      try {
+        const res = await fetch(API_URL, {
+          method:  "POST",
+          headers: { "Content-Type": "application/json" },
+          body:    JSON.stringify({ text }),
+        });
+
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.detail || `Server error: ${res.status}`);
+        }
+
+        const data = await res.json();
+        renderScore(data.score);
+        renderClaims(data.claims);
+      } catch (err) {
+        showError(err.message || "Unexpected error. Is the backend running?");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    document.getElementById("llm-input").addEventListener("keydown", e => {
+      if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) runVerification();
+    });
+  </script>
+</body>
+</html>

@@ -31,7 +31,12 @@ class WikiFetcher:
         if any(word in claim_lower for word in ["founded", "company", "headquarters", "ceo"]):
             entity = f"{entity} company"
 
-        results = wikipedia.search(entity, results=5)
+         # 🔥 SAFE WRAP (prevents crash)
+        try:
+            results = wikipedia.search(entity, results=5)
+        except Exception:
+            return None
+        
         if not results:
             return None
 

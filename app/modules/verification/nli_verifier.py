@@ -54,7 +54,7 @@ class NLIVerifier:
     # Public API
     # ------------------------------------------------------------------
 
-    def verify(self, claim: str, evidence_sentences: List[str]) -> str:
+    def verify(self, claim: str, evidence_sentences: List[str]) -> dict:
         """
         Verify a claim against a list of evidence sentences.
 
@@ -63,13 +63,15 @@ class NLIVerifier:
             evidence_sentences: Retrieved sentences from Wikipedia (premises).
 
         Returns:
-            One of: "SUPPORTED", "CONTRADICTED", "NOT ENOUGH INFO".
+            A dict with keys:
+                "verdict"  -> str  (SUPPORTED / CONTRADICTED / NOT ENOUGH INFO)
+                "evidence" -> list of str  (the input evidence_sentences)
             Returns NOT_ENOUGH_INFO immediately if either input is empty.
         """
         if not claim or not claim.strip():
-            return NOT_ENOUGH_INFO
+            return {"verdict": NOT_ENOUGH_INFO, "evidence": evidence_sentences}
         if not evidence_sentences:
-            return NOT_ENOUGH_INFO
+            return {"verdict": NOT_ENOUGH_INFO, "evidence": []}
 
         labels = [
             self._classify(premise, claim)
@@ -77,7 +79,8 @@ class NLIVerifier:
             if premise and premise.strip()
         ]
 
-        return self._aggregate(labels)
+        verdict = self._aggregate(labels)
+        return {"verdict": verdict, "evidence": evidence_sentences}
 
     def verify_detailed(
         self, claim: str, evidence_sentences: List[str]
@@ -148,7 +151,6 @@ class NLIVerifier:
 
         predicted_index = logits.argmax(dim=-1).item()
         label = self._LABELS[predicted_index]
-
 
         return label
 
